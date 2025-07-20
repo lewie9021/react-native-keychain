@@ -79,7 +79,8 @@ class CipherStorageKeystoreAesGcm(
         alias: String,
         username: String,
         password: String,
-        level: SecurityLevel
+        level: SecurityLevel,
+        validityDuration: Int
     ) {
 
         throwIfInsufficientLevel(level)
@@ -89,7 +90,7 @@ class CipherStorageKeystoreAesGcm(
         var key: Key? = null
 
         try {
-            key = extractGeneratedKey(safeAlias, level, retries)
+            key = extractGeneratedKey(safeAlias, level, validityDuration, retries)
 
             val result = CipherStorage.EncryptionResult(
                 encryptString(key, username), encryptString(key, password), this
@@ -155,10 +156,10 @@ class CipherStorageKeystoreAesGcm(
     @Throws(GeneralSecurityException::class)
     override fun getKeyGenSpecBuilder(
         alias: String,
+        validityDuration: Int
     ): KeyGenParameterSpec.Builder {
         val purposes = KeyProperties.PURPOSE_DECRYPT or KeyProperties.PURPOSE_ENCRYPT
 
-        val validityDuration = 5
         val keyGenParameterSpecBuilder =
             KeyGenParameterSpec.Builder(alias, purposes).setBlockModes(BLOCK_MODE_GCM)
                 .setEncryptionPaddings(PADDING_NONE).setRandomizedEncryptionRequired(true)
