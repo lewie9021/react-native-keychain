@@ -80,7 +80,8 @@ class CipherStorageKeystoreAesCbc(reactContext: ReactApplicationContext) :
         alias: String,
         username: String,
         password: String,
-        level: SecurityLevel
+        level: SecurityLevel,
+        validityDuration: Int
     ) {
 
         throwIfInsufficientLevel(level)
@@ -89,7 +90,7 @@ class CipherStorageKeystoreAesCbc(reactContext: ReactApplicationContext) :
         val retries = AtomicInteger(1)
 
         try {
-            val key = extractGeneratedKey(safeAlias, level, retries)
+            val key = extractGeneratedKey(safeAlias, level, validityDuration, retries)
 
             val result = CipherStorage.EncryptionResult(
                 encryptString(key, username), encryptString(key, password), this
@@ -138,7 +139,8 @@ class CipherStorageKeystoreAesCbc(reactContext: ReactApplicationContext) :
 
     @Throws(GeneralSecurityException::class)
     override fun getKeyGenSpecBuilder(
-        alias: String
+        alias: String,
+        validityDuration: Int
     ): KeyGenParameterSpec.Builder {
         val purposes = KeyProperties.PURPOSE_DECRYPT or KeyProperties.PURPOSE_ENCRYPT
 
