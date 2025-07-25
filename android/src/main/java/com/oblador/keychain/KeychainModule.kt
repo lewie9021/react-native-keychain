@@ -565,7 +565,7 @@ class KeychainModule(reactContext: ReactApplicationContext) :
       username,
       password,
       decryptionResult.getSecurityLevel(),
-      getValidityDurationOrDefault(null),
+      VALIDITY_DURATION,
       promptInfo
     )
 
@@ -672,6 +672,7 @@ class KeychainModule(reactContext: ReactApplicationContext) :
     const val FACE_SUPPORTED_NAME = "Face"
     const val IRIS_SUPPORTED_NAME = "Iris"
     const val EMPTY_STRING = ""
+    const val VALIDITY_DURATION = 5
     private val LOG_TAG = KeychainModule::class.java.simpleName
 
 
@@ -739,7 +740,7 @@ class KeychainModule(reactContext: ReactApplicationContext) :
       if (null != options && options.hasKey(Maps.VALIDITY_DURATION)) {
         validityDuration = options.getInt(Maps.VALIDITY_DURATION)
       }
-      return validityDuration ?: 5
+      return validityDuration ?: VALIDITY_DURATION
     }
 
     // endregion

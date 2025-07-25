@@ -128,7 +128,7 @@ class CipherStorageKeystoreAesGcm(
         var key: Key? = null
 
         try {
-            key = extractGeneratedKey(safeAlias, level, retries)
+            key = extractGeneratedKey(safeAlias, level, KeychainModule.VALIDITY_DURATION, retries)
             val results = CipherStorage.DecryptionResult(
                 decryptBytes(key, username), decryptBytes(key, password)
             )

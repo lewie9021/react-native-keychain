@@ -108,7 +108,7 @@ class CipherStorageKeystoreRsaEcb(reactContext: ReactApplicationContext) :
 
         try {
             // key is always NOT NULL otherwise GeneralSecurityException raised
-            key = extractGeneratedKey(safeAlias, level, retries)
+            key = extractGeneratedKey(safeAlias, level, KeychainModule.VALIDITY_DURATION, retries)
 
             val results =
                 CipherStorage.DecryptionResult(

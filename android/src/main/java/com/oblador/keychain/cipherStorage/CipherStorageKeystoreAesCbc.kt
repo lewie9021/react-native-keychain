@@ -118,7 +118,7 @@ class CipherStorageKeystoreAesCbc(reactContext: ReactApplicationContext) :
         val retries = AtomicInteger(1)
 
         try {
-            val key = extractGeneratedKey(safeAlias, level, retries)
+            val key = extractGeneratedKey(safeAlias, level, KeychainModule.VALIDITY_DURATION, retries)
 
             val results = CipherStorage.DecryptionResult(
                 decryptBytes(key, username), decryptBytes(key, password), getSecurityLevel(key)
