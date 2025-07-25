@@ -55,14 +55,15 @@ class CipherStorageKeystoreRsaEcb(reactContext: ReactApplicationContext) :
         alias: String,
         username: String,
         password: String,
-        level: SecurityLevel
+        level: SecurityLevel,
+        validityDuration: Int
     ) {
         throwIfInsufficientLevel(level)
 
         val safeAlias = getDefaultAliasIfEmpty(alias, getDefaultAliasServiceName())
         val retries = AtomicInteger(1)
         try {
-            extractGeneratedKey(safeAlias, level, retries)
+            extractGeneratedKey(safeAlias, level, validityDuration, retries)
             val result = innerEncryptedCredentials(safeAlias, password, username)
             handler.onEncrypt(result, null)
         } catch (e: Exception) {
@@ -176,13 +177,13 @@ class CipherStorageKeystoreRsaEcb(reactContext: ReactApplicationContext) :
     @Throws(GeneralSecurityException::class)
     override fun getKeyGenSpecBuilder(
         alias: String,
+        validityDuration: Int
     ): KeyGenParameterSpec.Builder {
 
         val purposes = KeyProperties.PURPOSE_DECRYPT or KeyProperties.PURPOSE_ENCRYPT
 
         val keySize = ENCRYPTION_KEY_SIZE
 
-        val validityDuration = 5
         val keyGenParameterSpecBuilder =
             KeyGenParameterSpec.Builder(alias, purposes)
                 .setBlockModes(BLOCK_MODE_ECB)

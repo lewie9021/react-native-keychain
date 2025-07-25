@@ -53,7 +53,8 @@ interface CipherStorage {
     alias: String,
     username: String,
     password: String,
-    level: SecurityLevel
+    level: SecurityLevel,
+    validityDuration: Int
   )
 
 

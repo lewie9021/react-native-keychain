@@ -86,6 +86,7 @@ class KeychainModule(reactContext: ReactApplicationContext) :
       const val USERNAME = "username"
       const val PASSWORD = "password"
       const val STORAGE = "storage"
+      const val VALIDITY_DURATION = "validityDuration"
     }
   }
 
@@ -191,8 +192,9 @@ class KeychainModule(reactContext: ReactApplicationContext) :
           val useBiometry =
             getUseBiometry(accessControl) && (isFingerprintAuthAvailable || isFaceAuthAvailable || isIrisAuthAvailable)
           val promptInfo = getPromptInfo(options, usePasscode, useBiometry)
+          val validityDuration = getValidityDurationOrDefault(options)
           val result =
-            encryptToResult(alias, storage, username, password, level, promptInfo)
+            encryptToResult(alias, storage, username, password, level, validityDuration, promptInfo)
           prefsStorage.storeEncryptedEntry(alias, result)
           val results = Arguments.createMap()
           results.putString(Maps.SERVICE, alias)
@@ -502,10 +504,11 @@ class KeychainModule(reactContext: ReactApplicationContext) :
     username: String,
     password: String,
     securityLevel: SecurityLevel,
+    validityDuration: Int,
     promptInfo: PromptInfo
   ): CipherStorage.EncryptionResult {
     val handler = getInteractiveHandler(storage, promptInfo)
-    storage.encrypt(handler, alias, username, password, securityLevel)
+    storage.encrypt(handler, alias, username, password, securityLevel, validityDuration)
     CryptoFailedException.reThrowOnError(handler.error)
     if (null == handler.encryptionResult) {
       throw CryptoFailedException("No decryption results and no error. Something deeply wrong!")
@@ -549,6 +552,7 @@ class KeychainModule(reactContext: ReactApplicationContext) :
       username,
       password,
       decryptionResult.getSecurityLevel(),
+      getValidityDurationOrDefault(null),
       promptInfo
     )
 
@@ -714,6 +718,15 @@ class KeychainModule(reactContext: ReactApplicationContext) :
       }
       if (null == minimalSecurityLevel) minimalSecurityLevel = fallback
       return SecurityLevel.valueOf(minimalSecurityLevel)
+    }
+
+    /** Get validity duration from options or fallback to default value of 5 seconds. */
+    private fun getValidityDurationOrDefault(options: ReadableMap?): Int {
+      var validityDuration: Int? = null
+      if (null != options && options.hasKey(Maps.VALIDITY_DURATION)) {
+        validityDuration = options.getInt(Maps.VALIDITY_DURATION)
+      }
+      return validityDuration ?: 5
     }
 
     // endregion

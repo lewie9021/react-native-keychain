@@ -69,6 +69,15 @@ export type SetOptions = {
    *
    */
   authenticationPrompt?: AuthenticationPrompt;
+  /** Authentication validity duration in seconds.
+   * @platform Android
+   * @default 5
+   *
+   * - Set to -1 for unlimited validity (until biometric enrollment changes)
+   * - Set to 0 to require authentication for every operation
+   * - Set to positive number for time-limited validity in seconds
+   */
+  validityDuration?: number;
 } & BaseOptions &
   AccessControlOption;
 

@@ -136,7 +136,7 @@ abstract class CipherStorageBase(protected val applicationContext: Context) : Ci
 
   /** Get encryption algorithm specification builder instance. */
   @Throws(GeneralSecurityException::class)
-  protected abstract fun getKeyGenSpecBuilder(alias: String): KeyGenParameterSpec.Builder
+  protected abstract fun getKeyGenSpecBuilder(alias: String, validityDuration: Int): KeyGenParameterSpec.Builder
 
 
   /** Get information about provided key. */
@@ -178,6 +178,7 @@ abstract class CipherStorageBase(protected val applicationContext: Context) : Ci
   protected fun extractGeneratedKey(
     safeAlias: String,
     level: SecurityLevel,
+    validityDuration: Int,
     retries: AtomicInteger
   ): Key {
     var key: Key?
@@ -186,7 +187,7 @@ abstract class CipherStorageBase(protected val applicationContext: Context) : Ci
       // Check if the key exists
       if (!keyStore.containsAlias(safeAlias)) {
         // Key does not exist, generate a new one
-        generateKeyAndStoreUnderAlias(safeAlias, level)
+        generateKeyAndStoreUnderAlias(safeAlias, level, validityDuration)
       } else {
         // Key exists, check if it's compatible
         key = keyStore.getKey(safeAlias, null)
@@ -203,7 +204,7 @@ abstract class CipherStorageBase(protected val applicationContext: Context) : Ci
           // Key is not compatible, delete it
           keyStore.deleteEntry(safeAlias)
           // Generate a new compatible key
-          generateKeyAndStoreUnderAlias(safeAlias, level)
+          generateKeyAndStoreUnderAlias(safeAlias, level, validityDuration)
           key = null // Set key to null to retry the loop
           continue
         }
@@ -373,7 +374,7 @@ abstract class CipherStorageBase(protected val applicationContext: Context) : Ci
 
   /** Get the most secured keystore */
   @Throws(GeneralSecurityException::class)
-  fun generateKeyAndStoreUnderAlias(alias: String, requiredLevel: SecurityLevel) {
+  fun generateKeyAndStoreUnderAlias(alias: String, requiredLevel: SecurityLevel, validityDuration: Int) {
     // Firstly, try to generate the key as safe as possible (strongbox).
     // see https://developer.android.com/training/articles/keystore#HardwareSecurityModule
 
@@ -382,7 +383,7 @@ abstract class CipherStorageBase(protected val applicationContext: Context) : Ci
 
     if (supportsSecureHardware) {
       try {
-        secretKey = tryGenerateStrongBoxSecurityKey(alias)
+        secretKey = tryGenerateStrongBoxSecurityKey(alias, validityDuration)
       } catch (ex: GeneralSecurityException) {
         Log.w(LOG_TAG, "StrongBox security storage is not available.", ex)
       } catch (ex: ProviderException) {
@@ -394,7 +395,7 @@ abstract class CipherStorageBase(protected val applicationContext: Context) : Ci
     // (it still might be generated in hardware, but not in StrongBox)
     if (secretKey == null || !supportsSecureHardware) {
       try {
-        secretKey = tryGenerateRegularSecurityKey(alias)
+        secretKey = tryGenerateRegularSecurityKey(alias, validityDuration)
       } catch (fail: GeneralSecurityException) {
         Log.e(LOG_TAG, "Regular security storage is not available.", fail)
         throw fail
@@ -434,14 +435,14 @@ abstract class CipherStorageBase(protected val applicationContext: Context) : Ci
 
 
   @Throws(GeneralSecurityException::class)
-  protected fun tryGenerateRegularSecurityKey(alias: String): Key {
-    val specification = getKeyGenSpecBuilder(alias).build()
+  protected fun tryGenerateRegularSecurityKey(alias: String, validityDuration: Int): Key {
+    val specification = getKeyGenSpecBuilder(alias, validityDuration).build()
     return generateKey(specification)
   }
 
 
   @Throws(GeneralSecurityException::class)
-  protected fun tryGenerateStrongBoxSecurityKey(alias: String): Key {
+  protected fun tryGenerateStrongBoxSecurityKey(alias: String, validityDuration: Int): Key {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
       throw KeyStoreAccessException(
         "Strong box security keystore is only supported on Android 12 (API level 31) or higher. Current API level: ${Build.VERSION.SDK_INT}."
@@ -449,7 +450,7 @@ abstract class CipherStorageBase(protected val applicationContext: Context) : Ci
     }
 
     val specification =
-      getKeyGenSpecBuilder(alias).setIsStrongBoxBacked(true).build()
+      getKeyGenSpecBuilder(alias, validityDuration).setIsStrongBoxBacked(true).build()
     return generateKey(specification)
   }
 
