@@ -6,6 +6,7 @@ import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
 import android.util.Log
 import com.facebook.react.bridge.ReactApplicationContext
+import com.oblador.keychain.KeychainModule
 import com.oblador.keychain.KeychainModule.KnownCiphers
 import com.oblador.keychain.SecurityLevel
 import com.oblador.keychain.cipherStorage.CipherStorageKeystoreAesCbc.IV.IV_LENGTH

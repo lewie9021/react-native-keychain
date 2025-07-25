@@ -7,6 +7,7 @@ import android.security.keystore.KeyProperties
 import android.security.keystore.UserNotAuthenticatedException
 import android.util.Log
 import com.facebook.react.bridge.ReactApplicationContext
+import com.oblador.keychain.KeychainModule
 import com.oblador.keychain.KeychainModule.KnownCiphers
 import com.oblador.keychain.SecurityLevel
 import com.oblador.keychain.resultHandler.CryptoContext
