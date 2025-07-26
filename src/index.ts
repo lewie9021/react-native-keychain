@@ -74,6 +74,13 @@ export function getGenericPassword(
   );
 }
 
+export function getGenericPasswordV2(
+  options?: GetOptions
+): Promise<false | UserCredentials> {
+  return RNKeychainManager.getGenericPasswordForOptionsV2(
+    normalizeAuthPrompt(options)
+  );
+}
 /**
  * Checks if generic password exists for the given service.
  *

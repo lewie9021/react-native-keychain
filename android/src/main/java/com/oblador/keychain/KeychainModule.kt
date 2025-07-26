@@ -16,6 +16,7 @@ import com.facebook.react.module.annotations.ReactModule
 import com.oblador.keychain.cipherStorage.CipherCache
 import com.oblador.keychain.cipherStorage.CipherStorage
 import com.oblador.keychain.cipherStorage.CipherStorage.DecryptionResult
+import com.oblador.keychain.cipherStorage.CipherStorage.EncryptionResult
 import com.oblador.keychain.cipherStorage.CipherStorageBase
 import com.oblador.keychain.cipherStorage.CipherStorageKeystoreAesCbc
 import com.oblador.keychain.cipherStorage.CipherStorageKeystoreAesGcm
@@ -30,10 +31,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.TimeUnit
 
 @ReactModule(name = KeychainModule.KEYCHAIN_MODULE)
 @Suppress("unused")
@@ -325,6 +326,58 @@ class KeychainModule(reactContext: ReactApplicationContext) :
   fun getGenericPasswordForOptions(options: ReadableMap?, promise: Promise) {
     val service = getServiceOrDefault(options)
     getGenericPassword(service, options, promise)
+  }
+
+  @ReactMethod
+  fun getGenericPasswordForOptionsV2(options: ReadableMap?, promise: Promise) {
+    val service = getServiceOrDefault(options)
+
+    Log.e("KEYCHAIN_TEST", "=== getGenericPasswordForOptionsV2 ENTRY - service: $service ===")
+
+    coroutineScope.launch {
+      mutex.withLock {
+        try {
+          Log.e("KEYCHAIN_TEST", "V2: Inside coroutine scope and mutex")
+          
+          // Create V2 handler
+          val v2Handler = KeychainModuleV2(
+            reactApplicationContext,
+            prefsStorage
+          ) { storageName -> getCipherStorageByName(storageName) }
+
+          Log.e("KEYCHAIN_TEST", "V2: Created V2 handler, about to call getGenericPassword")
+
+          // Call V2 implementation
+          val result = v2Handler.getGenericPassword(service, options)
+
+          Log.e("KEYCHAIN_TEST", "V2: Got result from V2 handler: $result")
+
+          if (result["result"] == false) {
+            Log.e("KEYCHAIN_TEST", "V2: Resolving with false")
+            promise.resolve(false)
+          } else {
+            Log.e("KEYCHAIN_TEST", "V2: Creating credentials map")
+            val credentials = Arguments.createMap()
+            credentials.putString(Maps.SERVICE, result["service"] as String)
+            credentials.putString(Maps.USERNAME, result["username"] as String)
+            credentials.putString(Maps.PASSWORD, result["password"] as String)
+            credentials.putString(Maps.STORAGE, result["storage"] as String)
+            Log.e("KEYCHAIN_TEST", "V2: Resolving with credentials")
+            promise.resolve(credentials)
+          }
+
+        } catch (e: KeychainException) {
+          Log.e("KEYCHAIN_TEST", "V2: KeychainException caught: ${e.message}", e)
+          Log.e(KEYCHAIN_MODULE, "KeychainException in V2: ${e.message}", e)
+          val errorCode = e.errorCode ?: Errors.E_INTERNAL_ERROR
+          promise.reject(errorCode, e)
+        } catch (e: Exception) {
+          Log.e("KEYCHAIN_TEST", "V2: General Exception caught: ${e.message}", e)
+          Log.e(KEYCHAIN_MODULE, "Exception in V2: ${e.message}", e)
+          promise.reject(Errors.E_INTERNAL_ERROR, e)
+        }
+      }
+    }
   }
 
   private fun resetGenericPassword(alias: String, promise: Promise) {
